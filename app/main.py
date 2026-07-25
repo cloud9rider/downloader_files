@@ -105,7 +105,6 @@ async def calculate_stats(payload: CalculateRequest):
     }
 
 async def download_all_files():
-    print(">>> download_all_files запущена")
     global download_status
     
     download_status.is_running = True
@@ -122,7 +121,6 @@ async def download_all_files():
     while True:
         try:
             names = await client.get_names()
-            print("Добавляю файлы в БД 1:")
             
             if not names:
                 print("Все файлы скачаны!")
@@ -130,10 +128,8 @@ async def download_all_files():
             
             batch = names[:3]
             print(f"Скачиваю: {batch}")
-            print("Добавляю файлы в БД 2:")
             
             zip_data = await client.download_files(batch)
-            print("Добавляю файлы в БД 3:")
             
             files_content = {}
             with zipfile.ZipFile(io.BytesIO(zip_data), 'r') as zip_ref:
@@ -146,7 +142,6 @@ async def download_all_files():
                         await f.write(content)
             
             now = datetime.now(NOVOSIBIRSK_TZ).isoformat()
-            print("Добавляю файлы в БД:", list(files_content.keys()))
             db.add_files([
                 (file_name, content, now) 
                 for file_name, content in files_content.items()
