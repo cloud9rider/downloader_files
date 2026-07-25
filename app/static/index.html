@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Сервис скачивания и анализа файлов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f6f9fc;
+            padding: 20px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            padding: 24px 32px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        header p {
+            opacity: 0.75;
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9edf2;
+            background: #fafbfc;
+            padding: 0 24px;
+        }
+
+        .tab-btn {
+            padding: 14px 24px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: #0f172a;
+        }
+
+        .tab-btn.active {
+            color: #0f172a;
+            border-bottom-color: #2563eb;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 32px 32px 40px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #e9edf2;
+            color: #1e293b;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #e9edf2;
+            color: #1e293b;
+        }
+        .btn-secondary:hover {
+            background: #d1d9e4;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #047857;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 0.8rem;
+        }
+
+        .status-card {
+            background: #f1f5f9;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 32px;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            font-size: 0.95rem;
+        }
+
+        .status-item .label {
+            color: #64748b;
+        }
+        .status-item .value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .status-badge {
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #d1d9e4;
+            color: #334155;
+        }
+        .status-badge.running {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .status-badge.done {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 16px;
+            border-radius: 12px;
+            border: 1px solid #e9edf2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: #f8fafc;
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid #e9edf2;
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .file-check {
+            width: 20px;
+            height: 20px;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .pagination .info {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .pagination .buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pagination .buttons button {
+            padding: 6px 14px;
+            border: 1px solid #d1d9e4;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+        }
+        .pagination .buttons button:hover:not(:disabled) {
+            background: #f1f5f9;
+        }
+        .pagination .buttons button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .selection-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 16px 0 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin: 16px 0 24px;
+        }
+
+        .stat-card {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .stat-card .digit {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .stat-card .count {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        .file-stats {
+            margin-top: 20px;
+        }
+
+        .file-stats details {
+            margin-bottom: 8px;
+            border: 1px solid #e9edf2;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .file-stats summary {
+            font-weight: 500;
+            cursor: pointer;
+            color: #0f172a;
+        }
+
+        .file-stats .mini-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 16px;
+            padding: 8px 0 0 8px;
+            font-size: 0.85rem;
+        }
+
+        .file-stats .mini-stats span {
+            background: #f1f5f9;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .mt-16 { margin-top: 16px; }
+        .mt-24 { margin-top: 24px; }
+        .flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .gap-8 { gap: 8px; }
+
+        @media (max-width: 640px) {
+            header h1 { font-size: 1.3rem; }
+            .tab-btn { padding: 10px 16px; font-size: 0.85rem; }
+            .status-card { flex-direction: column; align-items: stretch; }
+            .pagination { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📁 Сервис файлов</h1>
+        <p>Скачивание каталога и анализ цифровой статистики</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="download">⬇ Скачивание</button>
+        <button class="tab-btn" data-tab="files">📋 Файлы и расчёты</button>
+    </div>
+
+    <div id="tab-download" class="tab-content active">
+        <div class="flex">
+            <button id="btnStartDownload" class="btn btn-primary">▶ Скачать данные</button>
+            <span id="downloadStatusBadge" class="status-badge">Ожидание</span>
+        </div>
+
+        <div class="status-card">
+            <div class="status-item"><span class="label">⏱ Старт (НСК):</span> <span class="value" id="startTime">—</span></div>
+            <div class="status-item"><span class="label">📥 Скачано файлов:</span> <span class="value" id="downloadedCount">0</span></div>
+            <div class="status-item"><span class="label">📦 Всего в каталоге:</span> <span class="value" id="totalFilesUnknown">неизвестно</span></div>
+            <div class="status-item"><span class="label">⏳ Статус:</span> <span class="value" id="statusMessage">Ожидание запуска</span></div>
+        </div>
+
+        <div style="margin-top: 12px; font-size: 0.9rem; color: #64748b;">
+            <p id="progressDetail">Нажмите «Скачать данные» для начала. Процесс будет выполняться в фоне.</p>
+        </div>
+    </div>
+
+    <div id="tab-files" class="tab-content">
+        <div class="flex">
+            <button id="btnCalculate" class="btn btn-success" disabled>📊 Произвести расчёты</button>
+            <span style="color: #64748b; font-size: 0.9rem;" id="selectedCount">Выбрано: 0</span>
+        </div>
+
+        <div class="selection-tools">
+            <button id="btnSelectPage" class="btn btn-secondary btn-sm">✅ Выбрать все на странице</button>
+            <button id="btnSelectAll" class="btn btn-secondary btn-sm">✅ Выбрать все файлы</button>
+            <button id="btnClearSelection" class="btn btn-secondary btn-sm">❌ Снять выделение</button>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" id="checkAllPage" /></th>
+                        <th>Имя файла</th>
+                        <th style="width: 200px;">Время скачивания (НСК)</th>
+                    </tr>
+                </thead>
+                <tbody id="filesTableBody">
+                    <tr><td colspan="3" class="empty-state">Файлы ещё не скачаны</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <span class="info" id="pageInfo">Страница 1 из 1</span>
+            <div class="buttons">
+                <button id="prevPage" disabled>◀</button>
+                <button id="nextPage">▶</button>
+            </div>
+        </div>
+
+        <div id="resultsBlock" style="margin-top: 32px; display: none;">
+            <hr style="border: none; border-top: 2px solid #e9edf2; margin-bottom: 20px;" />
+            <h3 style="font-weight: 500; margin-bottom: 8px;">📈 Общая статистика (по всем выбранным файлам)</h3>
+            <div id="totalStatsContainer" class="stats-grid"></div>
+
+            <h3 style="font-weight: 500; margin: 20px 0 8px;">📄 Статистика по каждому файлу</h3>
+            <div id="perFileStatsContainer" class="file-stats"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '';
+
+    let currentPage = 1;
+    const perPage = 10;
+    let totalFiles = 0;
+    let allFiles = [];
+    let selectedFileNames = new Set();
+
+    const $ = id => document.getElementById(id);
+    const startBtn = $('btnStartDownload');
+    const statusBadge = $('downloadStatusBadge');
+    const startTimeEl = $('startTime');
+    const downloadedCountEl = $('downloadedCount');
+    const statusMessageEl = $('statusMessage');
+    const progressDetail = $('progressDetail');
+
+    const filesBody = $('filesTableBody');
+    const checkAllPage = $('checkAllPage');
+    const prevPageBtn = $('prevPage');
+    const nextPageBtn = $('nextPage');
+    const pageInfo = $('pageInfo');
+    const selectedCountEl = $('selectedCount');
+    const btnCalculate = $('btnCalculate');
+    const btnSelectPage = $('btnSelectPage');
+    const btnSelectAll = $('btnSelectAll');
+    const btnClearSelection = $('btnClearSelection');
+    const resultsBlock = $('resultsBlock');
+    const totalStatsContainer = $('totalStatsContainer');
+    const perFileStatsContainer = $('perFileStatsContainer');
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const tab = btn.dataset.tab;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            if (tab === 'files') loadFilesPage();
+        });
+    });
+
+    async function fetchStatus() {
+        try {
+            const resp = await fetch('/api/download-status');
+            if (!resp.ok) throw new Error('Статус не доступен');
+            const data = await resp.json();
+            updateStatusUI(data);
+        } catch (e) {
+            console.warn('Ошибка получения статуса:', e);
+        }
+    }
+
+    function updateStatusUI(data) {
+        const running = data.is_running;
+        const started = data.started_at;
+        const finished = data.finished_at;
+        const downloaded = data.total_downloaded || 0;
+
+        if (started) {
+            const d = new Date(started);
+            startTimeEl.textContent = d.toLocaleString('ru-RU', { timeZone: 'Asia/Novosibirsk' });
+        } else {
+            startTimeEl.textContent = '—';
+        }
+
+        downloadedCountEl.textContent = downloaded;
+
+        if (running) {
+            statusBadge.textContent = '⏳ Идёт загрузка';
+            statusBadge.className = 'status-badge running';
+            statusMessageEl.textContent = 'Скачивание активно...';
+            startBtn.disabled = true;
+        } else if (finished) {
+            statusBadge.textContent = '✅ Завершено';
+            statusBadge.className = 'status-badge done';
+            statusMessageEl.textContent = `Завершено ${new Date(finished).toLocaleString('ru-RU', { timeZone: 'Asia/Novosibirsk' })}`;
+            startBtn.disabled = false;
+        } else {
+            statusBadge.textContent = '⏸ Ожидание';
+            statusBadge.className = 'status-badge';
+            statusMessageEl.textContent = 'Не запущено';
+            startBtn.disabled = false;
+        }
+
+        if (running) {
+            progressDetail.textContent = `Идёт скачивание... скачано ${downloaded} файлов.`;
+        } else {
+            progressDetail.textContent = downloaded > 0 ? `Скачано ${downloaded} файлов. Готово.` : 'Нажмите «Скачать данные» для начала.';
+        }
+    }
+
+    startBtn.addEventListener('click', async () => {
+        try {
+            startBtn.disabled = true;
+            const resp = await fetch('/api/start-download', { method: 'POST' });
+            const data = await resp.json();
+            if (resp.ok) {
+                statusMessageEl.textContent = 'Запущено!';
+                progressDetail.textContent = 'Процесс стартовал, ждите...';
+                setTimeout(fetchStatus, 1000);
+            } else {
+                alert('Ошибка запуска: ' + (data.detail || 'неизвестная'));
+                startBtn.disabled = false;
+            }
+        } catch (e) {
+            alert('Сетевая ошибка: ' + e.message);
+            startBtn.disabled = false;
+        }
+    });
+
+    async function loadFilesPage() {
+        try {
+            const resp = await fetch(`/api/files?page=${currentPage}&per_page=${perPage}`);
+            if (!resp.ok) throw new Error('Ошибка загрузки файлов');
+            const data = await resp.json();
+            totalFiles = data.total || 0;
+            allFiles = data.items || [];
+
+            renderFiles(allFiles);
+            updatePagination(data.page, data.total, perPage);
+            syncCheckboxesWithSelection();
+        } catch (e) {
+            console.error(e);
+            filesBody.innerHTML = `<tr><td colspan="3" class="empty-state">Ошибка загрузки: ${e.message}</td></tr>`;
+        }
+    }
+
+    function renderFiles(files) {
+        if (!files || files.length === 0) {
+            filesBody.innerHTML = `<tr><td colspan="3" class="empty-state">Нет скачанных файлов</td></tr>`;
+            return;
+        }
+        let html = '';
+        files.forEach(f => {
+            const name = f.filename || f.name || 'unknown';
+            const downloaded = f.downloaded_at ? new Date(f.downloaded_at).toLocaleString('ru-RU', { timeZone: 'Asia/Novosibirsk' }) : '—';
+            const checked = selectedFileNames.has(name) ? 'checked' : '';
+            html += `<tr>
+                <td><input type="checkbox" class="file-check" data-filename="${name}" ${checked} /></td>
+                <td>${name}</td>
+                <td>${downloaded}</td>
+            </tr>`;
+        });
+        filesBody.innerHTML = html;
+
+        document.querySelectorAll('.file-check').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const name = e.target.dataset.filename;
+                if (e.target.checked) {
+                    selectedFileNames.add(name);
+                } else {
+                    selectedFileNames.delete(name);
+                }
+                updateSelectionUI();
+            });
+        });
+
+        checkAllPage.checked = files.every(f => selectedFileNames.has(f.filename || f.name));
+        checkAllPage.onchange = (e) => {
+            const checked = e.target.checked;
+            document.querySelectorAll('.file-check').forEach(cb => {
+                cb.checked = checked;
+                const name = cb.dataset.filename;
+                if (checked) selectedFileNames.add(name);
+                else selectedFileNames.delete(name);
+            });
+            updateSelectionUI();
+        };
+    }
+
+    function syncCheckboxesWithSelection() {
+        document.querySelectorAll('.file-check').forEach(cb => {
+            const name = cb.dataset.filename;
+            cb.checked = selectedFileNames.has(name);
+        });
+        checkAllPage.checked = allFiles.every(f => selectedFileNames.has(f.filename || f.name));
+        updateSelectionUI();
+    }
+
+    function updatePagination(page, total, per) {
+        const totalPages = Math.ceil(total / per) || 1;
+        pageInfo.textContent = `Страница ${page} из ${totalPages}`;
+        prevPageBtn.disabled = page <= 1;
+        nextPageBtn.disabled = page >= totalPages;
+    }
+
+    function updateSelectionUI() {
+        const count = selectedFileNames.size;
+        selectedCountEl.textContent = `Выбрано: ${count}`;
+        btnCalculate.disabled = count === 0;
+    }
+
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; loadFilesPage(); }
+    });
+    nextPageBtn.addEventListener('click', () => {
+        currentPage++; loadFilesPage();
+    });
+
+    btnSelectPage.addEventListener('click', () => {
+        allFiles.forEach(f => {
+            const name = f.filename || f.name;
+            selectedFileNames.add(name);
+        });
+        syncCheckboxesWithSelection();
+        updateSelectionUI();
+    });
+
+    btnSelectAll.addEventListener('click', async () => {
+        try {
+            const resp = await fetch(`/api/files?page=1&per_page=9999`);
+            if (!resp.ok) throw new Error('Ошибка получения всех файлов');
+            const data = await resp.json();
+            const all = data.items || [];
+            all.forEach(f => {
+                const name = f.filename || f.name;
+                selectedFileNames.add(name);
+            });
+            await loadFilesPage();
+            updateSelectionUI();
+        } catch (e) {
+            alert('Не удалось выбрать все файлы: ' + e.message);
+        }
+    });
+
+    btnClearSelection.addEventListener('click', () => {
+        selectedFileNames.clear();
+        syncCheckboxesWithSelection();
+        updateSelectionUI();
+    });
+
+    btnCalculate.addEventListener('click', async () => {
+        const fileNames = Array.from(selectedFileNames);
+        if (fileNames.length === 0) return;
+
+        try {
+            btnCalculate.disabled = true;
+            btnCalculate.textContent = '⏳ Считаем...';
+
+            const resp = await fetch('/api/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file_names: fileNames })
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                throw new Error(err.detail || 'Ошибка расчёта');
+            }
+            const data = await resp.json();
+            displayResults(data, fileNames);
+            resultsBlock.style.display = 'block';
+        } catch (e) {
+            alert('Ошибка расчёта: ' + e.message);
+        } finally {
+            btnCalculate.disabled = false;
+            btnCalculate.textContent = '📊 Произвести расчёты';
+        }
+    });
+
+    function displayResults(data, fileNames) {
+        const total = data.total_stats || {};
+        let html = '';
+        for (let d = 0; d <= 9; d++) {
+            const key = String(d);
+            const count = total[key] || 0;
+            html += `<div class="stat-card"><div class="digit">${d}</div><div class="count">${count}</div></div>`;
+        }
+        totalStatsContainer.innerHTML = html;
+
+        const perFile = data.per_file || {};
+        let perHtml = '';
+        fileNames.forEach(name => {
+            const stats = perFile[name] || {};
+            let mini = '';
+            for (let d = 0; d <= 9; d++) {
+                const key = String(d);
+                mini += `<span>${d}: ${stats[key] || 0}</span>`;
+            }
+            perHtml += `<details>
+                <summary>${name}</summary>
+                <div class="mini-stats">${mini}</div>
+            </details>`;
+        });
+        perFileStatsContainer.innerHTML = perHtml || '<p>Нет данных по файлам</p>';
+    }
+
+    fetchStatus();
+    loadFilesPage();
+
+    setInterval(fetchStatus, 3000);
+
+</script>
+
+</body>
+</html>
